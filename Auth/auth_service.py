@@ -11,7 +11,6 @@ from utils.auth_utils import hash_password, verify_password
 
 class AuthService:
 
-    # ================= SIGNUP =================
     @staticmethod
     def signup_user(db: Session, payload: SignupDTO):
         if db.query(User).filter(User.email == payload.email).first():
@@ -31,7 +30,7 @@ class AuthService:
         return {"user_id": user.user_id}
 
 
-    # ================= LOGIN =================
+    
     @staticmethod
     def login_user(db: Session, payload: LoginDTO):
         user = db.query(User).filter(User.email == payload.email).first()
@@ -42,7 +41,7 @@ class AuthService:
         return {"message": "Login successful"}
 
 
-    # ================= GET PROFILE =================
+    
     @staticmethod
     def get_profile(db: Session, payload: GetProfileDTO):
         user = db.query(User).filter(User.email == payload.email).first()
@@ -53,7 +52,7 @@ class AuthService:
         return user
 
 
-    # ================= UPDATE PROFILE =================
+    
     @staticmethod
     def update_profile(db: Session, payload: UpdateProfileDTO):
         user = db.query(User).filter(User.user_id == payload.user_id).first()
@@ -80,7 +79,7 @@ class AuthService:
         return user
 
 
-    # ================= DELETE PROFILE =================
+    
     @staticmethod
     def delete_profile(db: Session, email: str, password: str):
         user = db.query(User).filter(User.email == email).first()

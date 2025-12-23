@@ -15,7 +15,6 @@ from Auth.auth_dto import (
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-# ================= SIGNUP =================
 @router.post("/signup", status_code=201)
 def signup(payload: SignupDTO, db: Session = Depends(get_db)):
     try:
@@ -23,8 +22,6 @@ def signup(payload: SignupDTO, db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-
-# ================= LOGIN =================
 @router.post("/login")
 def login(payload: LoginDTO, db: Session = Depends(get_db)):
     try:
@@ -33,7 +30,6 @@ def login(payload: LoginDTO, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail=str(e))
 
 
-# ================= GET PROFILE =================
 @router.post("/profile", response_model=UserResponseDTO)
 def get_profile(payload: GetProfileDTO, db: Session = Depends(get_db)):
     try:
@@ -51,7 +47,6 @@ def update_profile(payload: UpdateProfileDTO, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=str(e))
 
 
-# ================= DELETE PROFILE =================
 @router.delete("/profile")
 def delete_profile(payload: DeleteProfileDTO, db: Session = Depends(get_db)):
     try:
