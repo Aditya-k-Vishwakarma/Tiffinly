@@ -1,6 +1,7 @@
-from sqlalchemy.orm import Session
-from database.model import User
+from sqlalchemy.orm import Session #Session = Database ke saath baat karne ka medium (query, commands- data insert/update/delete nahi kar sakte, transaction manage nahi hota)
+from database.model import Customer, Vendor
 from Auth.auth_dto import (
+    UserRole,
     SignupDTO,
     LoginDTO,
     GetProfileDTO,
@@ -13,44 +14,146 @@ class AuthService:
 
     @staticmethod
     def signup_user(db: Session, payload: SignupDTO):
-        if db.query(User).filter(User.email == payload.email).first():
-            raise ValueError("Email already registered")
 
-        user = User(
-            username=payload.name,
-            email=payload.email,
-            password_hash=hash_password(payload.password)
-        )
+        #if user is already exist
+        if payload.phone_no != payload.phone_no:
+            raise ValueError("User is already registered")
 
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+        # Password confirmation here your password must eaqul to confirm password
+        if payload.password != payload.confirm_password:
+            raise ValueError("Passwords do not match")
 
-        # ✅ user_id return for verification
-        return {"user_id": user.user_id}
+        hashed_password = hash_password(payload.password) #payload k password ko hash kar diya
 
+        # customer(user role h) SIGNUP 
+        if payload.category_type == UserRole.customer:
+
+            # phone unique check
+            if db.query(Customer).filter(
+                Customer.contact_no == payload.phone_no
+            ).first():
+                raise ValueError("Phone number already registered")
+
+            customer = Customer(
+                username=payload.name,
+                contact_no=payload.phone_no,
+                email=payload.email,
+                password_hash=hashed_password
+            )
+
+            db.add(customer)
+            db.commit()
+            db.refresh(customer)
+
+            return {
+                "user_id": customer.customer_id,
+                "user_type": "customer"
+            }
+
+        #VENDOR SIGNUP
+        if payload.category_type == UserRole.vendor:
+
+            # phone unique check
+            if db.query(Vendor).filter(
+                Vendor.contact_no == payload.phone_no
+            ).first():
+                raise ValueError("Phone number already registered")
+
+            vendor = Vendor(
+                vendor_name=payload.name,
+                contact_no=payload.phone_no,
+                email=payload.email,
+                password_hash=hashed_password
+            )
+
+            db.add(vendor)
+            db.commit()
+            db.refresh(vendor)
+
+            return {
+                "user_id": vendor.vendor_id,
+                "user_type": "vendor"
+            }
+
+        # if the user have wrong category then the signup will through not valid category error 
+        raise ValueError("Invalid category type")
 
     
     @staticmethod
     def login_user(db: Session, payload: LoginDTO):
-        user = db.query(User).filter(User.email == payload.email).first()
 
-        if not user or not verify_password(payload.password, user.password_hash):
-            raise ValueError("Invalid email or password")
+    # CUSTOMER LOGIN
+        if payload.category_type == UserRole.customer:
+            customer = db.query(Customer).filter(
+            Customer.contact_no == payload.phone_no
+        ).first()
 
-        return {"message": "Login successful"}
+            if not customer:
+                raise ValueError("Phone number not registered")
 
+            if not verify_password(payload.password, customer.password_hash):
+                raise ValueError("Invalid password")
 
-    
+            return {
+            "message": "Login successful",
+            "user_type": "customer",
+            "user_id": customer.customer_id
+            }
+
+    #  VENDOR LOGIN
+        elif payload.category_type == UserRole.vendor:
+            vendor = db.query(Vendor).filter(
+            Vendor.contact_no == payload.phone_no
+        ).first()
+
+            if not vendor:
+                raise ValueError("Phone number not registered")
+
+            if not verify_password(payload.password, vendor.password_hash):
+                raise ValueError("Invalid password")
+
+            return {
+            "message": "Login successful",
+            "user_type": "vendor",
+            "user_id": vendor.vendor_id
+            }
+
+        else:
+            raise ValueError("Invalid user role")
+   
     @staticmethod
     def get_profile(db: Session, payload: GetProfileDTO):
-        user = db.query(User).filter(User.email == payload.email).first()
 
-        if not user or not verify_password(payload.password, user.password_hash):
-            raise ValueError("Invalid email or password")
+    # CUSTOMER PROFILE
+        if payload.category_type == UserRole.customer:
+            user = db.query(Customer).filter(
+            Customer.contact_no == payload.phone_no
+            ).first()
 
-        return user
+            if not user:
+                raise ValueError("Customer not found")
 
+            if not verify_password(payload.password, user.password_hash):
+                raise ValueError("Invalid password")
+
+            return user
+
+    # VENDOR PROFILE
+        elif payload.category_type == UserRole.vendor:
+            user = db.query(Vendor).filter(
+            Vendor.contact_no == payload.phone_no
+            ).first()
+
+            if not user:
+                raise ValueError("Vendor not found")
+
+            if not verify_password(payload.password, user.password_hash):
+                raise ValueError("Invalid password")
+
+            return user
+
+        else:
+            raise ValueError("Invalid user role")
 
     
     @staticmethod

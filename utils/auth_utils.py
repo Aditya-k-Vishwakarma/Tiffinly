@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ================= ENV CONFIG =================
+#loading ENV CONFIG from system file (os)
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(
@@ -16,7 +16,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY is not set in environment variables")
 
-# ================= PASSWORD =================
+# PASSWORD 
 pwd_context = CryptContext(
     schemes=["bcrypt"],
     deprecated="auto"
@@ -31,7 +31,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-# ================= JWT =================
+# JWT access token
 def create_access_token(
     data: dict,
     expires_delta: timedelta | None = None
@@ -44,9 +44,9 @@ def create_access_token(
         else timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire}) #Agar token expiry ke baad use hua → INVALID
 
-    # ✅ ONLY TOKEN STRING RETURN
+    # ONLY TOKEN STRING RETURN
     return jwt.encode(
         to_encode,
         SECRET_KEY,
