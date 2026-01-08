@@ -8,7 +8,7 @@ class UserRole(str, Enum):
 
 class SignupDTO(BaseModel):
     name: str = Field(..., min_length=2, max_length=50)
-    phone_no: Annotated[str, Field(pattern=r"^[6-9]\d{9}$")]
+    phone_no: Annotated[str, Field(..., pattern=r"^[6-9]\d{9}$")]
     category_type: UserRole = Field(...)
     email: Optional[EmailStr] = None
     password: str = Field(..., min_length=8)

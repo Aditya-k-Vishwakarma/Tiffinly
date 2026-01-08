@@ -15,13 +15,20 @@ class AuthService:
     @staticmethod
     def signup_user(db: Session, payload: SignupDTO):
 
-        #if user is already exist
-        if payload.phone_no != payload.phone_no:
-            raise ValueError("User is already registered")
-
         # Password confirmation here your password must eaqul to confirm password
         if payload.password != payload.confirm_password:
             raise ValueError("Passwords do not match")
+        
+        # Global phone check from both tables customers and vendors 
+        # hum yaha par phone number and otp login karewnge thats why phone ka constrain add kiya h 
+        phone_exists = (
+            db.query(Customer).filter(Customer.phone_no == payload.phone_no).first()
+            or
+            db.query(Vendor).filter(Vendor.phone_no == payload.phone_no).first()
+        )
+
+        if phone_exists:
+            raise ValueError("Phone number already registered")
 
         hashed_password = hash_password(payload.password) #payload k password ko hash kar diya
 
@@ -29,14 +36,14 @@ class AuthService:
         if payload.category_type == UserRole.customer:
 
             # phone unique check
-            if db.query(Customer).filter(
-                Customer.contact_no == payload.phone_no
-            ).first():
-                raise ValueError("Phone number already registered")
+            #if db.query(Customer).filter(
+             #   Customer.contact_no == payload.phone_no
+            #).first():
+            #    raise ValueError("Phone number already registered")
 
             customer = Customer(
-                username=payload.name,
-                contact_no=payload.phone_no,
+                customer_name=payload.name,
+                phone_no=payload.phone_no,
                 email=payload.email,
                 password_hash=hashed_password
             )
@@ -46,22 +53,21 @@ class AuthService:
             db.refresh(customer)
 
             return {
-                "user_id": customer.customer_id,
-                "user_type": "customer"
+                "user_id": customer.customer_id
             }
 
         #VENDOR SIGNUP
         if payload.category_type == UserRole.vendor:
 
             # phone unique check
-            if db.query(Vendor).filter(
-                Vendor.contact_no == payload.phone_no
-            ).first():
-                raise ValueError("Phone number already registered")
+            #if db.query(Vendor).filter(
+                #Vendor.contact_no == #payload.phone_no
+            #).first():
+                #raise ValueError("Phone number already registered")
 
             vendor = Vendor(
                 vendor_name=payload.name,
-                contact_no=payload.phone_no,
+                phone_no=payload.phone_no,
                 email=payload.email,
                 password_hash=hashed_password
             )
@@ -71,8 +77,7 @@ class AuthService:
             db.refresh(vendor)
 
             return {
-                "user_id": vendor.vendor_id,
-                "user_type": "vendor"
+                "user_id": vendor.vendor_id
             }
 
         # if the user have wrong category then the signup will through not valid category error 
@@ -85,7 +90,7 @@ class AuthService:
     # CUSTOMER LOGIN
         if payload.category_type == UserRole.customer:
             customer = db.query(Customer).filter(
-            Customer.contact_no == payload.phone_no
+            Customer.phone_no == payload.phone_no
         ).first()
 
             if not customer:
@@ -103,7 +108,7 @@ class AuthService:
     #  VENDOR LOGIN
         elif payload.category_type == UserRole.vendor:
             vendor = db.query(Vendor).filter(
-            Vendor.contact_no == payload.phone_no
+            Vendor.phone_no == payload.phone_no
         ).first()
 
             if not vendor:
