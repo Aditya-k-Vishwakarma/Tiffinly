@@ -1,5 +1,3 @@
-
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -9,9 +7,11 @@ from Auth.auth_dto import (
     SignupDTO,
     LoginDTO,
     GetProfileDTO,
-    UpdateProfileDTO,
+    CustomerUpdateProfileDTO,
+    VendorUpdateProfileDTO,
     DeleteProfileDTO,
-    UserResponseDTO
+    CustomerResponseDTO,
+    VendorResponseDTO
 )
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -27,35 +27,38 @@ def signup(payload: SignupDTO, db: Session = Depends(get_db)):
 @router.post("/login")
 def login(payload: LoginDTO, db: Session = Depends(get_db)):
     try:
-        return AuthService.login_user(db, payload)
+        return AuthService.login_user(db=db, payload=payload)
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
 
 
-@router.post("/profile", response_model=UserResponseDTO)
+
+@router.post("/profile")
 def get_profile(payload: GetProfileDTO, db: Session = Depends(get_db)):
     try:
         return AuthService.get_profile(db, payload)
     except ValueError as e:
-        raise HTTPException(status_code=401, detail=str(e))
-
-
-# ================= UPDATE PROFILE =================
-@router.put("/profile", response_model=UserResponseDTO)
-def update_profile(payload: UpdateProfileDTO, db: Session = Depends(get_db)):
-    try:
-        return AuthService.update_profile(db, payload)
-    except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
+# ================= UPDATE PROFILE =================
+@router.put("/vendor-update-profile", response_model=VendorUpdateProfileDTO)
+def update_profile(payload: VendorUpdateProfileDTO, db: Session = Depends(get_db)):
+    try:
+        return AuthService.update_vendor_profile(db, payload)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.put("/customer-update-profile", response_model=CustomerUpdateProfileDTO)
+def update_profile(payload: CustomerUpdateProfileDTO, db: Session = Depends(get_db)):
+    try:
+        return AuthService.update_customer_profile(db, payload)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    
 @router.delete("/profile")
 def delete_profile(payload: DeleteProfileDTO, db: Session = Depends(get_db)):
     try:
-        return AuthService.delete_profile(
-            db=db,
-            email=payload.email,
-            password=payload.password
-        )
+        return AuthService.delete_profile(db=db, payload=payload)
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))

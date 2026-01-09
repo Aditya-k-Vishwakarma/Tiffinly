@@ -16,8 +16,8 @@ class SignupDTO(BaseModel):
     # address add karna h frontend se lat long m
 
 class LoginDTO(BaseModel):
-    email: Optional[EmailStr] = None 
-    #by chnages agar phone nhi hua toh email se bhi long ho jaye suggestion
+    #email: Optional[EmailStr] = None 
+    # suggestion by chnages agar phone nhi hua toh email se bhi long ho jaye suggestion
     phone_no : Annotated[str, Field(...,pattern=r"^[6-9]\d{9}$")]
     password: str = Field(..., min_length=8) 
     #forget password? kese hoga? like otp on same registered number and then confirm and then update password
@@ -25,31 +25,49 @@ class LoginDTO(BaseModel):
     #particular table search k liye 
 
 class GetProfileDTO(BaseModel):
-    phone_no : Annotated[str, Field(...,pattern=r"^[6-9]\d{9}$")] 
-    #yaha par alternative contact no k sath bhi password ki linking hga uske sath bhi login hoga? 
+    user_id: int= Field(...)
+    category_type: UserRole = Field(...)
+    
+class CustomerUpdateProfileDTO(BaseModel):
+    customer_id: int
+    customer_name: Optional[str] = None
+    address: Optional[str] = None
+
+class VendorUpdateProfileDTO(BaseModel):
+    vendor_id : int
+    vendor_name: Optional[str] = None
+    tiffin_center_name: Optional[str] = None
+    tiffin_category: Optional[str] = None
+    #alternative_phone_no : Optional[int] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    pincode: Optional[str] = None
+
+
+class DeleteProfileDTO(BaseModel):
+    phone_no: Annotated[str, Field(..., pattern=r"^[6-9]\d{9}$")]
     password: str = Field(..., min_length=8)
     category_type: UserRole = Field(...)
 
 
-class UpdateProfileDTO(BaseModel):
+
+class BaseUserResponseDTO(BaseModel):
     user_id: int
-    name: Optional[str] = None
-    contact_no: Optional[str] = None
-    category_type: Optional[str] = None
-    address: Optional[str] = None
-
-
-class DeleteProfileDTO(BaseModel):
-    email: EmailStr
-    password: str = Field(..., min_length=8)
-
-
-class UserResponseDTO(BaseModel):
-    user_id: int
-    username: str
-    email: EmailStr
-    contact_no: Optional[str] = None
-    category_type: Optional[str] = None
+    phone_no: str
+    email: Optional[EmailStr] = None
     address: Optional[str] = None
 
     model_config = {"from_attributes": True}
+
+class CustomerResponseDTO(BaseUserResponseDTO):
+    customer_name: str
+    category_type: str = "customer"
+
+class VendorResponseDTO(BaseUserResponseDTO):
+    vendor_name: str
+    tiffin_center_name: Optional[str] = None
+    tiffin_category: Optional[str] = None
+    city: Optional[str] = None
+    pincode: Optional[str] = None
+
+    category_type: str = "vendor"

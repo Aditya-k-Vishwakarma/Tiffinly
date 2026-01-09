@@ -5,8 +5,13 @@ from Auth.auth_dto import (
     SignupDTO,
     LoginDTO,
     GetProfileDTO,
-    UpdateProfileDTO
+    CustomerUpdateProfileDTO,
+    VendorUpdateProfileDTO,
+    DeleteProfileDTO,
+    CustomerResponseDTO,
+    VendorResponseDTO
 )
+
 from utils.auth_utils import hash_password, verify_password
 
 
@@ -129,76 +134,143 @@ class AuthService:
     @staticmethod
     def get_profile(db: Session, payload: GetProfileDTO):
 
-    # CUSTOMER PROFILE
         if payload.category_type == UserRole.customer:
             user = db.query(Customer).filter(
-            Customer.contact_no == payload.phone_no
+                Customer.customer_id == payload.user_id
             ).first()
 
             if not user:
                 raise ValueError("Customer not found")
 
-            if not verify_password(payload.password, user.password_hash):
-                raise ValueError("Invalid password")
+            return {
+                "user_id": user.customer_id,
+                "phone_no": user.phone_no,
+                "email": user.email,
+                "address": user.address,
+                "customer_name": user.customer_name,
+                "category_type": "customer"
+            }
 
-            return user
-
-    # VENDOR PROFILE
         elif payload.category_type == UserRole.vendor:
             user = db.query(Vendor).filter(
-            Vendor.contact_no == payload.phone_no
+                Vendor.vendor_id == payload.user_id
             ).first()
 
             if not user:
                 raise ValueError("Vendor not found")
 
-            if not verify_password(payload.password, user.password_hash):
-                raise ValueError("Invalid password")
-
-            return user
+            return {
+                "user_id": user.vendor_id,
+                "phone_no": user.phone_no,
+                "email": user.email,
+                "address": user.address,
+                "vendor_name": user.vendor_name,
+                "tiffin_center_name": user.tiffin_center_name,
+                "tiffin_category": user.tiffin_category,
+                "city": user.city,
+                "pincode": user.pincode,
+                "category_type": "vendor"
+            }
 
         else:
             raise ValueError("Invalid user role")
 
     
     @staticmethod
-    def update_profile(db: Session, payload: UpdateProfileDTO):
-        user = db.query(User).filter(User.user_id == payload.user_id).first()
+    def update_customer_profile(db: Session, payload: CustomerUpdateProfileDTO):
 
-        if not user:
-            raise ValueError("User not found")
+        customer = db.query(Customer).filter(
+            Customer.customer_id == payload.customer_id
+        ).first()
 
-        # Empty value → old value remains
-        if payload.name not in (None, ""):
-            user.username = payload.name
+        if not customer:
+            raise ValueError("Customer not found")
 
-        if payload.contact_no not in (None, ""):
-            user.contact_no = payload.contact_no
-
-        if payload.category_type not in (None, ""):
-            user.category_type = payload.category_type
+        if payload.customer_name not in (None, ""):
+            customer.customer_name = payload.customer_name
 
         if payload.address not in (None, ""):
-            user.address = payload.address
+            customer.address = payload.address
 
         db.commit()
-        db.refresh(user)
+        db.refresh(customer)
 
-        return user
+        return customer
 
-
-    
     @staticmethod
-    def delete_profile(db: Session, email: str, password: str):
-        user = db.query(User).filter(User.email == email).first()
+    def update_vendor_profile(db: Session, payload: VendorUpdateProfileDTO):
 
-        if not user:
-            raise ValueError("Invalid email")
+        vendor = db.query(Vendor).filter(
+            Vendor.vendor_id == payload.vendor_id
+        ).first()
 
-        if not verify_password(password, user.password_hash):
-            raise ValueError("Invalid password")
+        if not vendor:
+            raise ValueError("Vendor not found")
 
-        db.delete(user)
+        if payload.vendor_name not in (None, ""):
+            vendor.vendor_name = payload.vendor_name
+
+        if payload.tiffin_center_name not in (None, ""):
+            vendor.tiffin_center_name = payload.tiffin_center_name
+
+        if payload.tiffin_category not in (None, ""):
+            vendor.tiffin_category = payload.tiffin_category
+
+        #if payload.alternative_phone_no not in (None, ""):
+            #vendor.alternative_phone_no = payload.alternative_phone_no
+
+        if payload.address not in (None, ""):
+            vendor.address = payload.address
+
+        if payload.city not in (None, ""):
+            vendor.city = payload.city
+
+        if payload.pincode not in (None, ""):
+            vendor.pincode = payload.pincode
+
         db.commit()
+        db.refresh(vendor)
 
-        return {"message": "User deleted successfully"}
+        return vendor
+
+    @staticmethod
+    def delete_profile(db: Session, payload: DeleteProfileDTO):
+        """
+        Delete customer or vendor profile using phone_no + password
+        """
+
+        # -------- CUSTOMER --------
+        if payload.category_type == UserRole.customer:
+            user = db.query(Customer).filter(
+                Customer.phone_no == payload.phone_no
+            ).first()
+
+            if not user:
+                raise ValueError("Customer not found")
+
+            if not verify_password(payload.password, user.password_hash):
+                raise ValueError("Incorrect password")
+
+            db.delete(user)
+            db.commit()
+            return {"message": "Customer profile deleted successfully"}
+
+        # -------- VENDOR --------
+        elif payload.category_type == UserRole.vendor:
+            user = db.query(Vendor).filter(
+                Vendor.phone_no == payload.phone_no
+            ).first()
+
+            if not user:
+                raise ValueError("Vendor not found")
+
+            if not verify_password(payload.password, user.password_hash):
+                raise ValueError("Incorrect password")
+
+            db.delete(user)
+            db.commit()
+            return {"message": "Vendor profile deleted successfully"}
+
+        # -------- INVALID ROLE --------
+        else:
+            raise ValueError("Invalid category_type")
